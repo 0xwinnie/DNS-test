@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dcc.sol — Web3 Identity</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a26;
+            --accent-sol: #14F195;
+            --accent-purple: #9945FF;
+            --accent-blue: #00D1FF;
+            --text-primary: #e8e8ef;
+            --text-secondary: #6b6b80;
+            --text-dim: #3a3a4f;
+            --border: #1e1e2e;
+            --glow-sol: rgba(20, 241, 149, 0.15);
+            --glow-purple: rgba(153, 69, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background grid */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.3;
+            z-index: 0;
+            animation: gridShift 20s linear infinite;
+        }
+
+        @keyframes gridShift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        /* Gradient orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: 0;
+            animation: float 8s ease-in-out infinite;
+        }
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: var(--glow-sol);
+            top: -150px; right: -100px;
+        }
+        .orb-2 {
+            width: 400px; height: 400px;
+            background: var(--glow-purple);
+            bottom: -100px; left: -100px;
+            animation-delay: -4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -20px) scale(1.05); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 64px;
+            animation: fadeUp 0.8s ease-out;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar-ring {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 28px;
+            padding: 3px;
+            background: conic-gradient(var(--accent-sol), var(--accent-purple), var(--accent-blue), var(--accent-sol));
+            animation: spin 6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 36px;
+            color: var(--accent-sol);
+        }
+
+        .domain-name {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .domain-tld {
+            color: var(--accent-sol);
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 14px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .chain-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 20px;
+            padding: 6px 16px;
+            background: rgba(20, 241, 149, 0.08);
+            border: 1px solid rgba(20, 241, 149, 0.2);
+            border-radius: 100px;
+            font-size: 12px;
+            color: var(--accent-sol);
+            letter-spacing: 0.05em;
+        }
+
+        .chain-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-sol);
+            box-shadow: 0 0 8px var(--accent-sol);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Info cards */
+        .cards {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+            animation: fadeUp 0.8s ease-out both;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(20, 241, 149, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* Wallet address */
+        .wallet-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+
+        .wallet-display .copy-btn {
+            flex-shrink: 0;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .wallet-display .copy-btn:hover {
+            border-color: var(--accent-sol);
+            color: var(--accent-sol);
+        }
+
+        /* Links section */
+        .links-section {
+            animation: fadeUp 0.8s ease-out 0.4s both;
+        }
+
+        .section-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .link-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .link-item:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(20, 241, 149, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .link-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .link-icon.twitter { background: rgba(29, 161, 242, 0.12); color: #1DA1F2; }
+        .link-icon.github { background: rgba(255, 255, 255, 0.08); color: #fff; }
+        .link-icon.discord { background: rgba(88, 101, 242, 0.12); color: #5865F2; }
+        .link-icon.telegram { background: rgba(0, 136, 204, 0.12); color: #0088cc; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 80px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+            animation: fadeUp 0.8s ease-out 0.5s both;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 0.05em;
+        }
+
+        .footer-text a {
+            color: var(--accent-sol);
+            text-decoration: none;
+        }
+
+        .powered-by {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .powered-by svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .card-row { grid-template-columns: 1fr; }
+            .container { padding: 40px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="container">
+        <!-- Header / Identity -->
+        <header class="header">
+            <div class="avatar-ring">
+                <div class="avatar-inner">dcc</div>
+            </div>
+            <h1 class="domain-name">dcc<span class="domain-tld">.sol</span></h1>
+            <p class="tagline">Web3 Identity · Solana Name Service</p>
+            <div class="chain-badge">Verified on Solana</div>
+        </header>
+
+        <!-- Info Cards -->
+        <div class="cards">
+            <div class="card">
+                <div class="card-label">Wallet Address</div>
+                <div class="wallet-display">
+                    <span id="wallet">CQ9poAG...1zX8JRf</span>
+                    <button class="copy-btn" onclick="copyWallet()">Copy</button>
+                </div>
+            </div>
+
+            <div class="card-row">
+                <div class="card">
+                    <div class="card-label">Primary Domain</div>
+                    <div class="card-value">dcc.sol</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Domains Owned</div>
+                    <div class="card-value">3</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">Bio</div>
+                <div class="card-value" style="font-size: 15px; line-height: 1.6; font-weight: 400;">
+                    Building the future of digital identity on Solana. 
+                    Your domain, your identity, fully on-chain.
+                </div>
+            </div>
+        </div>
+
+        <!-- Links -->
+        <div class="links-section">
+            <div class="section-title">Connect</div>
+            <div class="link-grid">
+                <a href="#" class="link-item">
+                    <div class="link-icon twitter">𝕏</div>
+                    <span>Twitter</span>
+                </a>
+                <a href="#" class="link-item">
+                    <div class="link-icon github">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                        </svg>
+                    </div>
+                    <span>GitHub</span>
+                </a>
+                <a href="#" class="link-item">
+                    <div class="link-icon discord">⟡</div>
+                    <span>Discord</span>
+                </a>
+                <a href="#" class="link-item">
+                    <div class="link-icon telegram">✈</div>
+                    <span>Telegram</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-text">
+                Resolved via <a href="https://sns.id" target="_blank">Solana Name Service</a>
+            </p>
+            <div class="powered-by">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                Powered by Sol.site
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function copyWallet() {
+            const addr = 'CQ9poAG...1zX8JRf';
+            navigator.clipboard.writeText(addr).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+    </script>
+</body>
+</html>
